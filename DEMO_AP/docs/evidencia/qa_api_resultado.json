@@ -1,0 +1,224 @@
+{
+  "fecha": "2026-11-05T19:35:51.233Z",
+  "total": 31,
+  "fallas": 0,
+  "resultados": [
+    {
+      "id": "QA-S01",
+      "mod": "Seguridad",
+      "nombre": "POST sin usuario → 401",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-S02",
+      "mod": "Seguridad",
+      "nombre": "Usuario inexistente en la cabecera → 401",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-S03",
+      "mod": "Seguridad",
+      "nombre": "Reiniciar la demo sin usuario → 401",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-S04",
+      "mod": "Seguridad",
+      "nombre": "Reiniciar la demo con un rol no administrador → 403",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-S05",
+      "mod": "Seguridad",
+      "nombre": "Recargar datos de ejemplo con datos existentes y rol no administrador → 403",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-S06",
+      "mod": "Seguridad",
+      "nombre": "Cambiar parámetros / simulación / reloj sin ser administrador → 403",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-S07",
+      "mod": "Seguridad",
+      "nombre": "JSON mal formado → 400 sin detalles técnicos",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-S08",
+      "mod": "Seguridad",
+      "nombre": "Ruta inexistente → 404 en JSON",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-S09",
+      "mod": "Seguridad",
+      "nombre": "Path traversal en estáticos no expone código fuente",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-S10",
+      "mod": "Seguridad",
+      "nombre": "Entradas hostiles en rutas no producen 500 con información técnica",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-S11",
+      "mod": "Seguridad",
+      "nombre": "Prototype pollution en el cuerpo no contamina Object.prototype",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-E01",
+      "mod": "Emisión",
+      "nombre": "Crear solicitud con producto inexistente → 400",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-E02",
+      "mod": "Emisión",
+      "nombre": "Radicar una solicitud vacía se rechaza con la lista de pendientes",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-E03",
+      "mod": "Emisión",
+      "nombre": "Emitir una solicitud en borrador se rechaza y no crea póliza",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-E04",
+      "mod": "Emisión",
+      "nombre": "Primas negativas, texto, nulas o absurdas son rechazadas por el backend (no solo por el front)",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-E05",
+      "mod": "Emisión",
+      "nombre": "Emitir dos veces la misma solicitud no genera una segunda póliza",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-E06",
+      "mod": "Emisión",
+      "nombre": "Emitir con rol sin permiso (usuario tercero) → 403",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-F01",
+      "mod": "Facturación",
+      "nombre": "Facturar el período 1 genera factura + recibo por asegurado (5)",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-F02",
+      "mod": "Facturación",
+      "nombre": "Facturar otra vez el mismo período no duplica facturas",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-F03",
+      "mod": "Facturación",
+      "nombre": "Cinco solicitudes de facturar en paralelo no generan duplicados",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-F04",
+      "mod": "Facturación",
+      "nombre": "Pagos mayores al saldo, negativos, cero o no numéricos se rechazan",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-F05",
+      "mod": "Facturación",
+      "nombre": "Pago exacto legaliza el recibo y un pago posterior se rechaza",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-F06",
+      "mod": "Facturación",
+      "nombre": "DIAN en falla: facturar es atómico (nada se factura) y el reproceso funciona",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-F07",
+      "mod": "Facturación",
+      "nombre": "Facturar con un usuario sin permiso → 403",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-M01",
+      "mod": "Movimientos",
+      "nombre": "Novedad con usuario sin permiso → 403 y la póliza queda intacta",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-M02",
+      "mod": "Movimientos",
+      "nombre": "Tipo de novedad inexistente → 4xx",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-M03",
+      "mod": "Movimientos",
+      "nombre": "Anular una póliza facturada: queda ANULADA y una segunda anulación se rechaza",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-M04",
+      "mod": "Movimientos",
+      "nombre": "Una póliza anulada no admite facturar ni nuevas novedades",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-I01",
+      "mod": "Integridad",
+      "nombre": "Cada recibo pertenece a una factura existente y total = pagado + saldo",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-I02",
+      "mod": "Integridad",
+      "nombre": "La auditoría registra las acciones críticas",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "id": "QA-X01",
+      "mod": "Entrada",
+      "nombre": "Texto con HTML/script no provoca error del servidor",
+      "ok": true,
+      "det": ""
+    }
+  ]
+}

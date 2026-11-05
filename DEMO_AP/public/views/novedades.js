@@ -1,0 +1,94 @@
+// Modales de novedades de la póliza. Cada una llama a POST /polizas/:id/novedades/:tipo y muestra el resultado real del servidor.
+import { h, GET, POST, state, form, modal, run, toast, table, chip, kv, btn, csvDownload, money, clear, showError, link } from '../ui.js';
+import { tomadorForm } from './comun.js';
+import { amparoModal } from './amparo.js';
+
+const clon = o => JSON.parse(JSON.stringify(o ?? null));
+export const NOVEDADES = [
+  ['anular', 'Anular póliza', 'HU077'], ['sucursal', 'Cambio de sucursal', 'HU294'], ['comision', 'Cambio de % comisión', 'HU296'], ['gastos', 'Modificación de gastos', 'HU300'], ['tomador', 'Cambio de tomador', 'HU309'],
+  ['periodicidad', 'Modificación de periodicidad de facturación', 'HU675'], ['ajustePlanes', 'Ajuste de planes', 'HU387'], ['beneficiarios', 'Cargue masivo de beneficiarios', 'HU404'], ['inclusion', 'Inclusión / cargue de asegurados', 'HU577'], ['retiro', 'Retiro de asegurados', 'HU577'],
+];
+
+async function enviar(p, tipo, body, onDone, { ok = 'Novedad aplicada' } = {}) {
+  const r = await run(() => POST(`/polizas/${p.id}/novedades/${tipo}`, body));
+  if (!r) return null;
+  if (r.pendienteAutorizacion) { modal({ title: 'Queda pendiente de autorización', body: h('div', null, h('div', { class: 'note warn' }, r.pendienteAutorizacion.motivo), kv([['Autorización', r.pendienteAutorizacion.id], ['Nivel requerido', r.pendienteAutorizacion.nivelRequerido], ['Estado', 'PENDIENTE']], 3), h('p', null, 'La novedad NO se aplica hasta que un usuario con el nivel requerido la apruebe en ', link('Autorizaciones', '#/autorizaciones'), '.')), actions: [{ label: 'Entendido', cls: 'primary' }] }); onDone?.(); return r; }
+  toast(r.sinCambios ? 'El archivo no tuvo registros válidos: no se aplicó ningún cambio' : ok, r.sinCambios ? 'warn' : 'ok'); onDone?.(); return r;
+}
+const hoy = () => state.meta.reloj;
+const resultadoTabla = (res) => table([{ t: 'Fila', k: 'fila' }, { t: 'Registro', f: x => chip(x.registro) }, { t: 'Observaciones', f: x => (x.observaciones || []).join(' · ') || '—' }], res);
+
+export function abrirNovedad(tipo, p, onDone) { return ({ anular, sucursal, comision, gastos, tomador, periodicidad, ajustePlanes, beneficiarios, inclusion, retiro })[tipo](p, onDone); }
+
+const anular = (p, onDone) => {
+  const d = { tipoAnulacion: '', motivo: '', fechaAnulacion: hoy(), razon: '' }; const caja = h('div'); const f = form(d, { onChange: pth => { if (pth === 'tipoAnulacion') dib(); } }); const m = state.meta;
+  const dib = () => { clear(caja); caja.append(h('div', { class: 'note' }, 'Aplica solo a anulaciones manuales (solicitud del tomador, ente judicial o excepción). Si el período de la fecha de anulación ya está facturado se generará una nota crédito con recibo negativo.'), h('div', { class: 'frm' }, f.select('tipoAnulacion', 'Tipo de anulación', m.tiposAnulacion, { req: true }), d.tipoAnulacion === 'Decisión de la aseguradora' ? f.select('motivo', 'Motivo de anulación', m.motivosAnulacion, { req: true }) : null, f.date('fechaAnulacion', 'Fecha de anulación', { req: true, hint: `Dentro de la vigencia ${p.vigenciaDesde} → ${p.vigenciaHasta}` }), f.area('razon', 'Razón de anulación', { req: true, cls: 'wide' }))); }; dib();
+  modal({ title: `Anular póliza ${p.numero}`, body: caja, actions: [{ label: 'Cancelar' }, { label: 'Confirmar anulación', cls: 'danger', cerrar: false, onclick: async (e, close) => { const r = await enviar(p, 'anular', d, onDone, { ok: 'Póliza anulada' }); if (r && !r.pendienteAutorizacion) { close(); modal({ title: 'Póliza anulada', body: h('div', null, h('div', { class: 'note ok' }, r.movimiento.detalle.mensajeReembolso), r.notasCredito?.length ? table([{ t: 'Nota crédito', k: 'notaCredito' }, { t: 'Recibo', k: 'recibo' }, { t: 'Valor', cls: 'r', f: x => money(x.valor) }, { t: 'Tratamiento', k: 'tratamiento' }, { t: 'Factura origen', k: 'facturaOrigen' }], r.notasCredito) : null), actions: [{ label: 'Cerrar', cls: 'primary' }] }); } } }] });
+};
+const sucursal = (p, onDone) => {
+  const d = { sucursal: '', fechaAplicacion: hoy() }; const f = form(d); const m = state.meta;
+  modal({ title: 'Cambio de sucursal', body: h('div', null, h('div', { class: 'note' }, `Sucursal actual: ${p.generales.sucursal}. Se genera nueva carátula, certificado individual y listado de asegurados; los recibos anteriores a la fecha de aplicación conservan la sucursal. No aplica a AP Viajero ni Bicibles. Si la póliza es intermediada, el intermediario debe comercializar en la nueva sucursal.`), h('div', { class: 'frm' }, f.select('sucursal', 'Nueva sucursal', m.sucursales.filter(s => s !== p.generales.sucursal), { req: true }), f.date('fechaAplicacion', 'Fecha de aplicación de la novedad', { req: true }))),
+    actions: [{ label: 'Cancelar' }, { label: 'Guardar', cls: 'primary', cerrar: false, onclick: async (e, close) => { const r = await enviar(p, 'sucursal', d, onDone); if (r) close(); } }] });
+};
+const comision = (p, onDone) => {
+  const sig = p.facturacionEstado?.cronograma?.find(c => c.estado === 'PENDIENTE')?.inicio || hoy(); const d = { comision: null, fechaAplicacion: sig }; const f = form(d); const max = state.meta.params.comisionMax.valor;
+  modal({ title: 'Cambio de % de comisión', body: h('div', null, h('div', { class: 'note' }, `Comisión vigente: ${p.comisionHistorial.at(-1).total} %. Solo pólizas intermediadas; no retroactivo; aplica a recibos futuros desde el inicio de un período de facturación; no afecta comisiones liquidadas. Por encima de ${max} % requiere autorización.`), h('div', { class: 'frm' }, f.num('comision', '% de comisión (antes de IVA)', { req: true }), f.date('fechaAplicacion', 'Fecha de aplicación de la novedad', { req: true }))),
+    actions: [{ label: 'Cancelar' }, { label: 'Guardar', cls: 'primary', cerrar: false, onclick: async (e, close) => { const r = await enviar(p, 'comision', d, onDone); if (r) close(); } }] });
+};
+const gastos = (p, onDone) => {
+  const c = p.costos; const d = { gastosAdmin: c.gastosAdmin, gastosReaseguro: c.gastosReaseguro, gastosComerciales: c.gastosComerciales, utilidad: c.utilidad, otrosGastos: c.otrosGastos, fechaAplicacion: hoy(), autorizadorId: '' }; const f = form(d); const m = state.meta; const rank = n => m.niveles.indexOf(n);
+  const aut = m.usuarios.filter(u => rank(u.nivel) >= rank('Superior') && u.id !== state.userId && u.rol !== 'Oficial de Cumplimiento');
+  modal({ title: 'Modificación de gastos', body: h('div', null, h('div', { class: 'note warn' }, 'Cualquier cambio impacta el P&G de la póliza: requiere ajuste de prima y autorización de un nivel superior. El cambio solo se aplica cuando el autorizador lo aprueba.'), h('div', { class: 'frm' }, f.num('gastosAdmin', 'Gastos de administración (nota técnica) %', { req: true }), f.num('gastosReaseguro', 'Gastos de reaseguro %'), f.num('gastosComerciales', 'Gastos comerciales %'), f.num('utilidad', 'Utilidad esperada %', { req: true }), f.num('otrosGastos', 'Otros gastos %'), f.date('fechaAplicacion', 'Fecha de aplicación', { req: true }), f.select('autorizadorId', 'Usuario autorizador', aut.map(u => ({ v: u.id, t: `${u.nombre} · ${u.nivel}` })), { req: true }))),
+    actions: [{ label: 'Cancelar' }, { label: 'Guardar y solicitar autorización', cls: 'primary', cerrar: false, onclick: async (e, close) => { const r = await enviar(p, 'gastos', d, onDone); if (r) close(); } }] });
+};
+const tomador = (p, onDone) => {
+  const d = clon(p.tomador);
+  modal({ title: 'Cambio de tomador', wide: true, body: h('div', null, h('div', { class: 'note' }, 'Al cambiar el tipo de persona los campos se limpian. Se genera una nueva versión de la carátula. Persona jurídica añade representante legal y correo de facturación electrónica.'), tomadorForm(d, false)),
+    actions: [{ label: 'Cancelar' }, { label: 'Guardar cambios', cls: 'primary', cerrar: false, onclick: async (e, close) => { const r = await enviar(p, 'tomador', d, onDone); if (r) close(); } }] });
+};
+const periodicidad = (p, onDone) => {
+  const cron = p.facturacionEstado.cronograma; const fact = cron.filter(c => c.estado === 'FACTURADO'); const fin = fact.length ? fact.at(-1).fin : null; const d = { periodicidad: '', fechaAplicacion: fin || hoy(), confirmar: false }; const f = form(d);
+  modal({ title: 'Modificación de periodicidad de facturación', body: h('div', null, h('div', { class: 'note' }, `Periodicidad actual: ${p.facturacion.periodicidad} · períodos facturados: ${fact.length}. ${fin ? `Fecha de aplicación = fecha final del último recibo generado (${fin}).` : 'Sin facturación previa: cualquier cambio es válido.'}`),
+    h('ul', { class: 'small muted' }, h('li', null, 'Mensual ya facturada → solo a Anual (se factura el saldo restante).'), h('li', null, 'Anual ya facturada → no se puede modificar en la vigencia en curso.'), h('li', null, 'Trimestral ya facturada → Semestral o Mensual.')),
+    h('div', { class: 'frm' }, f.select('periodicidad', 'Nueva periodicidad', state.meta.periodicidades.filter(x => x !== p.facturacion.periodicidad), { req: true }), f.date('fechaAplicacion', 'Fecha de aplicación de la novedad', { req: true, disabled: !!fin }), f.check('confirmar', '¿Está seguro de cambiar la periodicidad de facturación?'))),
+    actions: [{ label: 'Cancelar' }, { label: 'Emitir novedad', cls: 'primary', cerrar: false, onclick: async (e, close) => { const r = await enviar(p, 'periodicidad', d, onDone); if (r) close(); } }] });
+};
+const ajustePlanes = (p, onDone) => {
+  const planes = clon(p.planes); const cambios = {}; const caja = h('div'); const d = { fechaCambio: hoy() }; const f = form(d);
+  const dib = () => {
+    clear(caja); planes.forEach((pl, pi) => {
+      const campos = form(pl, {}); const ind = p.producto.modelo === 'individual'; const nom = p.generales.estructura === 'Nominada';
+      caja.append(h('div', { class: 'card', style: { background: 'var(--bg)' } }, h('div', { class: 'cbody' }, h('div', { class: 'frm' }, campos.text('nombre', 'Nombre del plan'), !nom && !ind ? campos.num('nAsegurados', 'Número de asegurados por plan') : null, campos.num('primaPorAsegurado', ind ? 'Prima del plan' : 'Prima por asegurado')),
+        table([{ t: 'Amparo', f: a => `${a.cod} · ${state.meta.amparos.find(x => x.cod === a.cod)?.nombre}` }, { t: 'Tipo', k: 'tipoAmparo' }, { t: 'Origen', f: a => a.origenEmision ? 'Emisión' : 'Novedad' }, { t: 'Prima', cls: 'r', f: a => a._eliminar ? 'Se eliminará' : money(a.primaComercial) }, { t: 'Valor', cls: 'r', f: a => a.tipoValorAsegurado === 'SUMA_INFORMADA' ? money(a.valorAseguradoIndividual) : `${a.factorMultiplicador} × ${a.tipoValorAsegurado === 'N_SMMLV' ? 'SMMLV' : 'sueldo'}` },
+          { t: '', f: a => h('div', { class: 'rowact' }, btn('Editar', () => amparoModal(a, { onSave: n => { Object.assign(a, n); dib(); } }), 'sm'), btn(a._eliminar ? 'Deshacer' : 'Eliminar', () => { a._eliminar = !a._eliminar; dib(); }, 'sm')) }], pl.amparos), h('div', { style: { marginTop: '8px' } }, btn('+ Agregar amparo', () => amparoModal(null, { primero: false, onSave: n => { pl.amparos.push({ ...n, origenEmision: false }); dib(); } }), 'sm'))))); });
+  };
+  dib();
+  const armar = () => ({ fechaCambio: d.fechaCambio, planes: planes.map(pl => { const orig = p.planes.find(x => x.id === pl.id); return { id: pl.id, nombre: pl.nombre, nAsegurados: pl.nAsegurados, primaPorAsegurado: pl.primaPorAsegurado, amparos: pl.amparos.map(a => a._eliminar ? { id: a.id, _eliminar: true } : orig.amparos.find(x => x.id === a.id) ? a : { ...a, id: undefined }) }; }) });
+  modal({ title: 'Ajuste de planes', wide: true, body: h('div', null, h('div', { class: 'note' }, 'No se puede eliminar el amparo básico ni los amparos creados en la emisión; sí los creados en una novedad. La fecha puede ser retroactiva, actual o futura. Si cambia la prima se factura la diferencia sobre lo ya facturado (ajuste o nota crédito) y se actualiza la carátula.'), h('div', { class: 'frm' }, f.date('fechaCambio', 'Fecha del cambio', { req: true })), caja),
+    actions: [{ label: 'Cancelar' }, { label: 'Guardar', cls: 'primary', cerrar: false, onclick: async (e, close) => { const r = await enviar(p, 'ajustePlanes', armar(), onDone); if (r) { close(); if (r.ajustes?.length) modal({ title: 'Facturación generada por el ajuste', body: table([{ t: 'Documento', f: x => x.notaCredito || x.factura }, { t: 'Tipo', f: x => x.notaCredito ? 'Nota crédito' : 'Ajuste' }, { t: 'Valor', cls: 'r', f: x => money(x.valor) }, { t: 'Período', f: x => `${x.periodo.inicio} → ${x.periodo.fin}` }], r.ajustes), actions: [{ label: 'Cerrar', cls: 'primary' }] }); } } }] });
+};
+const COLS_BEN = ['tipoDocAsegurado', 'numDocAsegurado', 'tipoDocBeneficiario', 'numDocBeneficiario', 'primerNombre', 'segundoNombre', 'primerApellido', 'segundoApellido', 'fechaNacimiento', 'parentesco', 'porcentaje', 'tipoBeneficiario'];
+const beneficiarios = (p, onDone) => {
+  const ej = ['CC', p.asegurados[0]?.numDoc || '2000000001', 'CC', '3000000001', 'Pedro', '', 'Gómez', '', '2010-01-01', '4', '100', 'Gratuito'];
+  const area = h('textarea', { rows: 7, placeholder: COLS_BEN.join(';') + '\n' + ej.join(';') }); const res = h('div'); const arch = h('input', { type: 'file', accept: '.csv,.txt', onchange: e => { const fl = e.target.files[0]; if (fl) fl.text().then(t => { area.value = t; }); } });
+  const filas = () => area.value.split(/\r?\n/).map(l => l.trim()).filter(Boolean).filter(l => !l.toLowerCase().startsWith('tipodocasegurado')).map(l => { const c = l.split(';'); return Object.fromEntries(COLS_BEN.map((k, i) => [k, (c[i] || '').trim()])); });
+  modal({ title: 'Asignación o modificación de beneficiarios · cargue masivo', wide: true, body: h('div', null, h('div', { class: 'note' }, 'Cada fila relaciona un beneficiario con su asegurado (tipo y número de documento). Se valida formato, duplicados, que el asegurado esté vigente y que los porcentajes sumen 100 % por asegurado. Solo se sobrescriben los asegurados incluidos en el archivo. Si faltan nombres de un beneficiario con CC se consultan en la Registraduría simulada (pruebe 1010101010).'),
+    h('div', { class: 'rowact' }, btn('Descargar plantilla', () => csvDownload('plantilla_beneficiarios.csv', [COLS_BEN, ej]), 'sm'), arch), area, res),
+    actions: [{ label: 'Cerrar' }, { label: 'Cargar archivo', cls: 'primary', cerrar: false, onclick: async () => { const fl = filas(); if (!fl.length) return toast('Pegue o cargue al menos una fila', 'warn'); const r = await enviar(p, 'beneficiarios', { filas: fl }, onDone, { ok: 'Cargue de beneficiarios aplicado' }); if (r?.resultado) { clear(res); res.append(h('h4', null, r.sinCambios ? 'Ningún registro fue válido' : `Resultado: ${r.exitosos} correctos · ${r.fallidos} con error`), resultadoTabla(r.resultado), btn('Descargar resultado', () => csvDownload('resultado_cargue_beneficiarios.csv', [['Fila', 'Registro', 'Observaciones'], ...r.resultado.map(x => [x.fila, x.registro, (x.observaciones || []).join(' | ')])]), 'sm')); } } }] });
+};
+const COLS_AS = ['tipoDoc', 'numDoc', 'primerNombre', 'primerApellido', 'fechaNacimiento', 'direccion', 'ciudad', 'departamento', 'correo', 'telefono', 'fechaIngreso'];
+const inclusion = (p, onDone) => {
+  const planes = p.planes; const d = { tipoDoc: 'CC', planId: planes[0]?.id, fechaIngreso: hoy() }; const f = form(d); const area = h('textarea', { rows: 4, placeholder: COLS_AS.join(';') }); const res = h('div');
+  const filas = () => area.value.split(/\r?\n/).map(l => l.trim()).filter(Boolean).filter(l => !l.toLowerCase().startsWith('tipodoc')).map(l => { const c = l.split(';'); return { ...Object.fromEntries(COLS_AS.map((k, i) => [k, (c[i] || '').trim()])), planId: planes[0]?.id }; });
+  const mostrar = r => { clear(res); if (r?.resultado) res.append(h('h4', null, `${r.exitosos} asegurado(s) incluido(s)`), resultadoTabla(r.resultado)); };
+  modal({ title: 'Inclusión de asegurados', wide: true, body: h('div', null, h('div', { class: 'note' }, 'Valida la edad con el amparo básico del plan y duplicidad. Con más de 30 días de retroactividad se solicita autorización de nivel Superior. El asegurado queda como novedad pendiente de facturar (prorrata) en el módulo de Facturación.'),
+    h('div', { class: 'frm' }, f.select('tipoDoc', 'Tipo de documento', state.meta.tiposDoc, { req: true }), f.text('numDoc', 'Número de documento', { req: true }), f.text('primerNombre', 'Primer nombre', { req: true }), f.text('primerApellido', 'Primer apellido', { req: true }), f.date('fechaNacimiento', 'Fecha de nacimiento', { req: true }), f.select('planId', 'Plan', planes.map(x => ({ v: x.id, t: x.nombre })), { req: true }), f.date('fechaIngreso', 'Fecha de ingreso', { req: true }), f.text('direccion', 'Dirección fiscal'), f.text('ciudad', 'Ciudad'), f.text('departamento', 'Departamento'), f.text('correo', 'Correo'), f.text('telefono', 'Teléfono')),
+    h('div', { class: 'sec' }, 'O cargue masivo (filas separadas por «;»)'), area, res),
+    actions: [{ label: 'Cerrar' }, { label: 'Incluir asegurado', cls: 'primary', cerrar: false, onclick: async () => { const r = await enviar(p, 'inclusion', { asegurados: [{ ...d }] }, onDone, { ok: 'Asegurado incluido' }); mostrar(r); } }, { label: 'Cargar filas', cerrar: false, onclick: async () => { const fl = filas(); if (!fl.length) return toast('Pegue al menos una fila', 'warn'); const r = await enviar(p, 'inclusion', { asegurados: fl, masivo: true }, onDone, { ok: 'Cargue masivo aplicado' }); mostrar(r); } }] });
+};
+const retiro = (p, onDone) => {
+  const vig = p.asegurados.filter(a => a.estado === 'VIGENTE'); const sel = new Set(); const d = { fechaRetiro: hoy(), motivo: '' }; const f = form(d);
+  modal({ title: 'Retiro de asegurados', wide: true, body: h('div', null, h('div', { class: 'note' }, 'El retiro conserva las condiciones comerciales de ingreso (facturación anual) o las últimas vigentes; no se factura después del retiro. La devolución de primas ya facturadas no está especificada (brecha G-15).'),
+    table([{ t: '', f: a => h('input', { type: 'checkbox', style: { width: 'auto' }, onchange: e => (e.target.checked ? sel.add(a.id) : sel.delete(a.id)) }) }, { t: 'Documento', f: a => `${a.tipoDoc} ${a.numDoc}` }, { t: 'Nombre', f: a => [a.primerNombre, a.primerApellido].join(' ') }, { t: 'Ingreso', k: 'fechaIngreso' }], vig, { empty: 'No hay asegurados vigentes' }), h('div', { class: 'frm', style: { marginTop: '10px' } }, f.date('fechaRetiro', 'Fecha de retiro', { req: true }), f.text('motivo', 'Motivo'))),
+    actions: [{ label: 'Cancelar' }, { label: 'Retirar seleccionados', cls: 'danger', cerrar: false, onclick: async (e, close) => { if (!sel.size) return toast('Seleccione al menos un asegurado', 'warn'); const r = await enviar(p, 'retiro', { asegurados: [...sel], fechaRetiro: d.fechaRetiro, motivo: d.motivo }, onDone, { ok: 'Retiro aplicado' }); if (r) close(); } }] });
+};

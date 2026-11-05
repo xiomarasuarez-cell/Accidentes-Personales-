@@ -1,0 +1,12 @@
+import { h, GET, POST, card, table, chip, badgeReal, run, modal, kv } from '../ui.js';
+
+export async function render(el, _p, { rerender }) {
+  const m = await GET('/meta'); const log = await GET('/bitacora'); const admin = m.usuario?.rol === 'Administrador';
+  el.append(h('h1', null, 'Integraciones simuladas'), h('p', { class: 'sub' }, 'Ninguna llama a un tercero real. Cada una reproduce el comportamiento esperado y deja una fila de bitácora con la forma de integraciones.log_integracion (LT-TI-INT-002). Fuerce una falla para ver cómo responde el flujo.'));
+  const filas = Object.entries(m.sim.servicios).map(([k, s]) => ({ k, ...s, modo: m.sim.config[k], llamadas: log.filter(x => x.servicio === k).length }));
+  el.append(card('Servicios', h('div', null, table([{ t: 'Servicio', f: r => h('span', null, r.nombre, ' ', badgeReal(true)) }, { t: 'Integración real equivalente', k: 'real' }, { t: 'Si falla…', f: r => r.bloqueante ? 'Bloquea la operación (atómica)' : 'No bloquea; queda pendiente' }, { t: 'Llamadas', k: 'llamadas', cls: 'r' }, { t: 'Estado', f: r => chip(r.modo) },
+    { t: 'Simular', f: r => h('select', { disabled: !admin, value: r.modo, onchange: e => run(async () => { await POST('/sim', { servicio: r.k, modo: e.target.value }); rerender(); }, 'Modo actualizado') }, ['ok', 'falla', 'timeout'].map(x => h('option', { value: x }, x))) }], filas),
+    admin ? null : h('p', { class: 'muted small' }, 'Cambie al usuario «Administrador demo» para forzar fallas.'))));
+  el.append(card('Bitácora de integraciones', table([{ t: 'Id', k: 'id' }, { t: 'Fecha', k: 'fecha' }, { t: 'Integración', k: 'integracion' }, { t: 'Operación', k: 'operacion' }, { t: 'Usuario', k: 'usuario' }, { t: 'HTTP', f: r => r.estadoHttp ?? '—' }, { t: 'Resultado', f: r => chip(r.exitoso ? 'ok' : 'falla') }, { t: 'ms', k: 'duracionMs', cls: 'r' }, { t: 'Simulado', f: () => badgeReal(true) }], log.slice(0, 120),
+    { empty: 'Aún no hay llamadas', onRow: r => modal({ title: `${r.id} · ${r.integracion}`, wide: true, body: h('div', null, kv([['Correlation id', r.correlationId], ['Operación', r.operacion], ['Destino', r.destino], ['Estado HTTP', r.estadoHttp ?? '—'], ['Error', r.error || '—'], ['Duración', `${r.duracionMs} ms`]], 2), h('h4', null, 'Solicitud'), h('pre', null, JSON.stringify(r.request, null, 2)), h('h4', null, 'Respuesta'), h('pre', null, JSON.stringify(r.respuesta, null, 2))), actions: [{ label: 'Cerrar', cls: 'primary' }] }) })));
+}

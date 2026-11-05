@@ -1,0 +1,12 @@
+{
+  "name": "demo-ap-core-positiva",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Demo funcional independiente del flujo de Accidentes Personales (emisión → administración → facturación) del Core Positiva",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.mjs",
+    "test": "node --disable-warning=ExperimentalWarning --test tests/"
+  },
+  "engines": { "node": ">=22.13" }
+}

@@ -1,0 +1,178 @@
+{
+  "fecha": "2026-11-04T21:59:35.663Z",
+  "base": "http://127.0.0.1:4300",
+  "total": 34,
+  "fallas": 0,
+  "resultados": [
+    {
+      "txt": "Ruta #/ se muestra",
+      "ok": true,
+      "det": "Accidentes Personales · de la emisión a la facturación\n\nRecorra el proceso completo: solicitud → estudio técnico → emisi"
+    },
+    {
+      "txt": "Ruta #/solicitudes se muestra",
+      "ok": true,
+      "det": "Solicitudes de póliza\n\nRegistro de la solicitud, estudio técnico (suscripción), autorizaciones y emisión.\n\nConsulta\nEsta"
+    },
+    {
+      "txt": "Ruta #/solicitud/SOL-000006 se muestra",
+      "ok": true,
+      "det": "← Solicitudes\n✓\nDatos generales\n!\nTomador\n!\nProductos, planes y amparos\n!\nGrupo asegurable\n✓\nSiniestralidad\n✓\nSARLAFT\n·\n"
+    },
+    {
+      "txt": "Ruta #/polizas se muestra",
+      "ok": true,
+      "det": "Pólizas emitidas\n\nConsulta, estados, vigencias, documentos y acceso a las novedades y a la facturación.\n\nConsulta\nEstado"
+    },
+    {
+      "txt": "Ruta #/poliza/1000001 se muestra",
+      "ok": true,
+      "det": "← Pólizas\nPóliza 1000001\nAccidentes Personales Colectivo · Colegio Los Pinos S.A.S.\nVIGENTE\nNovedades\nNovedades…\nAnular "
+    },
+    {
+      "txt": "Ruta #/poliza/1000001/movimientos se muestra",
+      "ok": true,
+      "det": "← Pólizas\nPóliza 1000001\nAccidentes Personales Colectivo · Colegio Los Pinos S.A.S.\nVIGENTE\nNovedades\nNovedades…\nAnular "
+    },
+    {
+      "txt": "Ruta #/poliza/1000001/facturacion se muestra",
+      "ok": true,
+      "det": "← Pólizas\nPóliza 1000001\nAccidentes Personales Colectivo · Colegio Los Pinos S.A.S.\nVIGENTE\nNovedades\nNovedades…\nAnular "
+    },
+    {
+      "txt": "Ruta #/novedades se muestra",
+      "ok": true,
+      "det": "Histórico de novedades\n\nTodos los movimientos de cada póliza, del último al primero (el 1 es la emisión), con el estado "
+    },
+    {
+      "txt": "Ruta #/facturacion se muestra",
+      "ok": true,
+      "det": "Facturación\n\nFactura electrónica y recibo individual por asegurado (pólizas nominadas) o a nivel póliza (innominadas). E"
+    },
+    {
+      "txt": "Ruta #/facturacion/1000001 se muestra",
+      "ok": true,
+      "det": "Facturación\n\nFactura electrónica y recibo individual por asegurado (pólizas nominadas) o a nivel póliza (innominadas). E"
+    },
+    {
+      "txt": "Ruta #/recibos se muestra",
+      "ok": true,
+      "det": "Recibos y recaudo\n\nEstados del recibo: Pendiente, Parcial, Legalizado, En mora y Anulado. El pago registrado aquí es una"
+    },
+    {
+      "txt": "Ruta #/recibo/RC-000005 se muestra",
+      "ok": true,
+      "det": "← Recibos\nPóliza 1000001\nRecibo RC-000005\nFactura FE-000005 · Asegurado5 Prueba Demo\nLEGALIZADO\nImprimir / PDF\nDetalle f"
+    },
+    {
+      "txt": "Ruta #/autorizaciones se muestra",
+      "ok": true,
+      "det": "Autorizaciones de novedades\n\nNovedades que exigen un nivel superior: modificación de gastos (HU300), comisión sobre el l"
+    },
+    {
+      "txt": "Ruta #/auditoria se muestra",
+      "ok": true,
+      "det": "Auditoría y trazabilidad\n\nCada operación registra usuario, fecha y, cuando aplica, los datos anterior y nuevo (HU294, 29"
+    },
+    {
+      "txt": "Ruta #/integraciones se muestra",
+      "ok": true,
+      "det": "Integraciones simuladas\n\nNinguna llama a un tercero real. Cada una reproduce el comportamiento esperado y deja una fila "
+    },
+    {
+      "txt": "Ruta #/escenarios se muestra",
+      "ok": true,
+      "det": "Escenarios ejecutables\n\nMatriz integral de escenarios: exitosos, alternos, validaciones, rechazos, errores de integració"
+    },
+    {
+      "txt": "Ruta #/trazabilidad se muestra",
+      "ok": true,
+      "det": "Trazabilidad, reglas y brechas\n\nQué dice la documentación, qué se implementó, qué prueba lo respalda y qué falta. Nada s"
+    },
+    {
+      "txt": "Ruta #/config se muestra",
+      "ok": true,
+      "det": "Configuración y datos de prueba\n\nParámetros, reloj de la demo y carga de datos. Cambiar parámetros requiere el usuario «"
+    },
+    {
+      "txt": "Se abre el modal «Cambio de sucursal»",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "txt": "El cambio de sucursal se persiste (movimiento nuevo + carátula nueva versión)",
+      "ok": true,
+      "det": "mov 2→3"
+    },
+    {
+      "txt": "La UI muestra el rechazo «intermediario no disponible para esta sucursal»",
+      "ok": true,
+      "det": "Cambio de sucursal\n×\nSucursal actual: Bogotá. Se genera nueva carátula, certificado individual y listado de asegurados; los recibos anteriores a la fecha de aplicación conservan la sucursal. No aplica"
+    },
+    {
+      "txt": "Pre-validación mostrada",
+      "ok": true,
+      "det": "Prueba Demo\t$ 10.000\t$ 10.000\t$ 1.000\td630199cb619…\tOK\tRC-000002\nFE-000001\t1000001\tFACTURA\tPERIODICA\t2026-11-04 → 2026-12-04\tAsegurado1 Prueba Demo\t$ 10.000\t$ 10.000\t$ 1.000\tc8e9b5ac0444…\tOK\tRC-000001"
+    },
+    {
+      "txt": "Facturar genera 5 facturas (una por asegurado)",
+      "ok": true,
+      "det": "5→10"
+    },
+    {
+      "txt": "El pago parcial deja el recibo en PARCIAL",
+      "ok": true,
+      "det": "{\"e\":\"PARCIAL\",\"p\":4000}"
+    },
+    {
+      "txt": "Política autorizada desde la UI",
+      "ok": true,
+      "det": "[\"Autorizada\"]"
+    },
+    {
+      "txt": "La solicitud se emite desde la UI y genera póliza",
+      "ok": true,
+      "det": "EMITIDA"
+    },
+    {
+      "txt": "La UI navega a la nueva póliza",
+      "ok": true,
+      "det": "#/poliza/1000004"
+    },
+    {
+      "txt": "Se crea una solicitud y se abre su formulario",
+      "ok": true,
+      "det": "#/solicitud/SOL-000007"
+    },
+    {
+      "txt": "«Guardar y continuar» valida y guarda la sección Datos generales",
+      "ok": true,
+      "det": "[\"Solicitud creada en borrador\",\"Sección «generales» validada y guardada\"]"
+    },
+    {
+      "txt": "El amparo de la tabla coincide con el del editor",
+      "ok": true,
+      "det": "Incapacidad total y permanente renta mensual | 714 · Incapacidad total y permanente renta mensual"
+    },
+    {
+      "txt": "Al editar, el código del amparo no se puede cambiar",
+      "ok": true,
+      "det": ""
+    },
+    {
+      "txt": "Reiniciar la demo sin usuario está bloqueado (401)",
+      "ok": true,
+      "det": 401
+    },
+    {
+      "txt": "Todos los escenarios se ejecutan desde la UI y pasan",
+      "ok": true,
+      "det": "64 de 64 escenarios correctos"
+    },
+    {
+      "txt": "No hubo excepciones JavaScript en el navegador",
+      "ok": true,
+      "det": ""
+    }
+  ]
+}
